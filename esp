@@ -1,0 +1,89 @@
+local lplr = game.Players.LocalPlayer
+local camera = game:GetService("Workspace").CurrentCamera
+
+local HeadOff = Vector3.new(0, 0.5, 0)
+local LegOff = Vector3.new(0, 3, 0)
+
+-- Function to create ESP and NameTag for a player
+local function createESP(v)
+    local BoxOutline = Drawing.new("Square")
+    BoxOutline.Visible = false
+    BoxOutline.Color = Color3.new(0, 0, 0)
+    BoxOutline.Thickness = 3
+    BoxOutline.Transparency = 1
+    BoxOutline.Filled = false
+
+    local Box = Drawing.new("Square")
+    Box.Visible = false
+    Box.Color = Color3.new(1, 1, 1)
+    Box.Thickness = 1
+    Box.Transparency = 1
+    Box.Filled = false
+
+    local NameTag = Drawing.new("Text")
+    NameTag.Visible = false
+    NameTag.Color = Color3.new(1, 1, 1)
+    NameTag.Size = 18
+    NameTag.Center = true
+    NameTag.Outline = true
+    NameTag.OutlineColor = Color3.new(0, 0, 0)
+    NameTag.Text = v.Name
+
+    local function boxesp()
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if v.Character ~= nil and v.Character:FindFirstChild("Humanoid") ~= nil and v.Character:FindFirstChild("HumanoidRootPart") ~= nil and v ~= lplr and v.Character.Humanoid.Health > 0 then
+                local Vector, onScreen = camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
+
+                local RootPart = v.Character.HumanoidRootPart
+                local Head = v.Character.Head
+                local RootPosition, RootVis = camera:WorldToViewportPoint(RootPart.Position)
+                local HeadPosition = camera:WorldToViewportPoint(Head.Position + HeadOff)
+                local LegPosition = camera:WorldToViewportPoint(RootPart.Position - LegOff)
+
+                if onScreen then
+                    local height = HeadPosition.Y - LegPosition.Y
+                    local width = height / 2
+
+                    BoxOutline.Size = Vector2.new(width, height)
+                    BoxOutline.Position = Vector2.new(RootPosition.X - width / 2, RootPosition.Y - height / 2)
+                    BoxOutline.Visible = true
+
+                    Box.Size = Vector2.new(width, height)
+                    Box.Position = Vector2.new(RootPosition.X - width / 2, RootPosition.Y - height / 2)
+                    Box.Visible = true
+                    -- TEAMCHECK
+                    if v.TeamColor == lplr.TeamColor then 
+                        Box.Color = Color3.new(0,1,0)
+                    else
+                        Box.Color = Color3.new(1,0,0)
+                    end
+                    
+                    NameTag.Position = Vector2.new(HeadPosition.X, HeadPosition.Y - 20)
+                    NameTag.Visible = true
+                else
+                    BoxOutline.Visible = false
+                    Box.Visible = false
+                    NameTag.Visible = false
+                end
+            else
+                BoxOutline.Visible = false
+                Box.Visible = false
+                NameTag.Visible = false
+            end
+        end)
+    end
+
+    coroutine.wrap(boxesp)()
+end
+
+-- Create ESP and NameTag for existing players
+for i, v in pairs(game.Players:GetPlayers()) do
+    if v ~= lplr then
+        createESP(v)
+    end
+end
+
+-- Create ESP and NameTag for new players
+game.Players.PlayerAdded:Connect(function(v)
+    createESP(v)
+end)
